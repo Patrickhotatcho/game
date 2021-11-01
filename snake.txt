@@ -1,0 +1,121 @@
+
+
+from typing import FrozenSet
+import pygame
+from pygame import sprite
+from pygame.constants import K_DOWN, K_LEFT, K_RIGHT, K_UP
+from pygame.display import update
+import random
+FPS = 60
+BACKGROUNDCOLOR = (153,0,0)
+GREEN = (0,204,102)
+BLUE = (0,0,102)
+YELLOW = (255,255,102)
+HEIGHT = 500
+WIDTH = 500
+
+pygame.init()
+screen = pygame.display.set_mode((HEIGHT,WIDTH))
+clock = pygame.time.Clock()
+pygame.display.set_caption('game')
+running = True
+
+
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((30,30))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = WIDTH/2
+        self.rect.bottom = HEIGHT -10
+        self.speedx = 2
+        self.speedy = 2
+        self.move_d = True
+        self.direction = -self.speedy
+    def update(self):
+        key_pressed = pygame.key.get_pressed()
+        
+        if key_pressed[K_RIGHT]:
+            self.move_d = False
+            self.direction = self.speedy
+        if key_pressed[K_LEFT]:
+            self.move_d = False
+            self.direction = -self.speedy
+        if key_pressed[K_UP]:
+            self.move_d = True
+            self.direction = -self.speedy
+        if key_pressed[K_DOWN]:
+            self.move_d = True
+            self.direction = self.speedy
+
+        if self.move_d:
+            self.rect.y += self.direction
+        else:
+            self.rect.x += self.direction
+    
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((30,30))
+        self.image.fill(BLUE)
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(0,WIDTH-self.rect.width)
+        self.rect.y = random.randrange(0,HEIGHT-self.rect.height)
+        self.num = 1
+        
+    def update(self):
+        if self.num == 0:
+            self.rect.x = random.randrange(0,WIDTH-self.rect.width)
+            self.rect.y = random.randrange(0,HEIGHT-self.rect.height)
+
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        pygame.sprite.Sprite.__init__(self) 
+        self.image = pygame.Surface((10,20))
+        self.image.fill(YELLOW)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.bottom = y
+        self.speedy = -10
+
+    def update(self):
+        
+        self.rect.y += self.speedy
+        if self.rect.bottom <0:
+            self.kill()
+
+all_sprites = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
+players = pygame.sprite.Group()
+
+player = Player()
+all_sprites.add(player)
+players.add(player)
+
+r = Enemy()
+all_sprites.add(r)
+enemies.add(r)
+
+while running:
+    clock.tick(FPS)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                player.shoot()
+    all_sprites.update()
+    
+    
+    eat = pygame.sprite.groupcollide(players,enemies,False,True)
+    for new in eat:
+        r = Enemy()
+        all_sprites.add(r)
+        enemies.add(r)
+
+    screen.fill(BACKGROUNDCOLOR)
+    all_sprites.draw(screen)
+    pygame.display.update()
+pygame.quit()
